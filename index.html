@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Wonderlic 2.0 — The NFL Combine Exam</title>
-<meta name="description" content="A browser-based NFL Wonderlic exam: 20 randomized questions from a 100-question bank, a full answer walkthrough, comparisons against leaked NFL Combine scores, and the Wonderlic 3.0 Beta football-concepts test.">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#0b100e">
+<meta name="description" content="A browser-based NFL Wonderlic exam: pick your team, take 20 randomized questions from a 100-question bank, get a full answer walkthrough, and see your score against leaked NFL Combine scores. Plus Wonderlic 3.0 Beta.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff" id="theme-color">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Wonderlic 2.0 — The NFL Combine Exam">
-<meta property="og:description" content="20 randomized questions from a 100-question bank, no answers until the end, a full walkthrough of every item, and your score stacked against the NFL Combine scores that leaked. Plus Wonderlic 3.0 Beta: advanced football concepts.">
+<meta property="og:description" content="Pick your team, then take the test. 20 randomized questions from a bank of 100, no answers until the end, a full walkthrough of every item, and your score stacked against the NFL Combine scores that leaked.">
 <link rel="stylesheet" href="css/styles.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🏈</text></svg>">
 </head>
@@ -20,21 +20,32 @@
     <span class="topbar__mark">🏈</span>
     <span class="topbar__name">WONDERLIC <strong>2.0</strong></span>
   </button>
-  <nav class="topbar__tabs">
-    <button class="tab is-active" type="button" data-mode-tab="core">2.0 Combine</button>
-    <button class="tab" type="button" data-mode-tab="advanced">3.0 Beta</button>
-  </nav>
+  <div class="topbar__right">
+    <button id="btn-team" class="teambtn" type="button" hidden>
+      <span id="btn-team-dot" class="teambtn__dot"></span>
+      <span id="btn-team-label">Team</span>
+    </button>
+    <nav class="topbar__tabs">
+      <button class="tab is-active" type="button" data-mode-tab="core">2.0</button>
+      <button class="tab" type="button" data-mode-tab="advanced">3.0 Beta</button>
+    </nav>
+  </div>
 </header>
 
-<!-- ============================ HOME ============================ -->
-<main id="screen-home" class="screen is-active">
+<!-- ======================== QUESTION ZERO: TEAM ======================== -->
+<main id="screen-team" class="screen">
+  <div id="team-body" class="wrap teamscreen"></div>
+</main>
+
+<!-- ============================== HOME ================================= -->
+<main id="screen-home" class="screen">
   <div id="home-body" class="wrap"></div>
   <footer class="sitefoot">
-    <p>Built as a study tool. Not affiliated with the National Football League or Wonderlic Inc. Player scores shown in this app come from figures that leaked publicly and have never been officially confirmed.</p>
+    <p>Built as a study tool. Not affiliated with the National Football League or Wonderlic Inc. Team colors are used to theme the interface only. Player scores shown in this app come from figures that leaked publicly and have never been officially confirmed.</p>
   </footer>
 </main>
 
-<!-- ============================ EXAM ============================ -->
+<!-- ============================== EXAM ================================= -->
 <main id="screen-exam" class="screen">
   <div class="examhead">
     <div class="wrap examhead__inner">
@@ -62,7 +73,7 @@
   </div>
 </main>
 
-<!-- =========================== RESULTS ========================== -->
+<!-- ============================= RESULTS =============================== -->
 <main id="screen-results" class="screen">
   <div id="results-body" class="wrap"></div>
   <footer class="sitefoot">
@@ -70,6 +81,7 @@
   </footer>
 </main>
 
+<script src="js/teams.js"></script>
 <script src="js/questions.js"></script>
 <script src="js/questions-advanced.js"></script>
 <script src="js/players.js"></script>

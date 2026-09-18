@@ -7,6 +7,21 @@ no server required — open `index.html` and take the test.
 
 ## What it does
 
+**Question 1 is your team.** The app opens white and neutral and asks one
+unscored question: what's your favorite team? All 32 clubs, grouped by
+division. Pick one and the entire interface — top bar, buttons, progress bars,
+selection states, score figures, the browser theme color — takes that club's
+colors for the rest of the visit. The choice persists, and the chip in the top
+bar changes it at any time.
+
+Team colors are applied through CSS custom properties that JavaScript writes at
+runtime, and the ink colors are computed rather than hard-coded: each color is
+checked for contrast and nudged until it clears WCAG AA, which is what keeps
+Saints gold and Chargers powder blue legible as both a surface and as text. The
+true club colors always appear on the team swatches. Correct/incorrect coloring
+in the walkthrough stays independent of team color, so a red-primary club never
+makes a right answer look wrong.
+
 **Wonderlic 2.0** — a 20-question cognitive exam drawn from a bank of 100.
 
 - **Five all-new sittings.** The engine tracks every question you have been
@@ -35,12 +50,24 @@ half-slide protection, simulated pressures, the one-yard ineligible-downfield
 rule, victory-formation clock math, EPA and cap proration. 20 questions from a
 bank of 54, graded on a coordinator scale, with the same full walkthrough.
 
+## Mobile
+
+Built mobile-first. On a phone the exam takes over the screen — the site bar
+drops away so the question, the clock and the buttons are all that is left —
+with full-width answer targets, a thumb-reachable Previous/Next bar pinned to
+the bottom, and `env(safe-area-inset-*)` padding for notched devices. Every
+interactive control is at least 42px on its short edge, tables scroll inside
+their own box rather than pushing the page sideways, and the layout was checked
+on all 32 team themes at 390px wide with no horizontal overflow.
+
 ## Question banks
 
 | Bank | File | Items | Categories |
 | --- | --- | --- | --- |
 | Wonderlic 2.0 | `js/questions.js` | 100 | Math, Number Series, Analogies, Word Meaning, Logic, Attention to Detail, Sentence Logic, Proverbs, Dates & Sequence, Spatial Reasoning |
 | Wonderlic 3.0 Beta | `js/questions-advanced.js` | 54 | Coverage, Fronts & Run Fits, Blocking Schemes, Route Concepts, Protection & Pressure, Rules, Situational, Analytics & Roster |
+
+Team colors live in `js/teams.js`.
 
 ## Timing
 
@@ -67,7 +94,8 @@ All asset paths are relative, so the site works unchanged at a project-Pages
 subpath such as `/Wonderlic-2.0/`, at a domain root, or straight off the
 filesystem.
 
-Progress lives in `localStorage` under `wonderlic_nfl_state_v1`. Each bank has a
+Progress lives in `localStorage` under `wonderlic_nfl_state_v1`, and the chosen
+team under `wonderlic_team_v1`. Each bank has a
 "Reset this bank" button on its home screen that clears seen-question history and
 restarts the all-new cycle.
 

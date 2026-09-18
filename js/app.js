@@ -94,6 +94,14 @@
     return node;
   }
 
+  /* Tables live in a scroll box so a wide row can never push the page
+     sideways on a phone. */
+  function wrapTable(table) {
+    const box = el('div', 'tablewrap');
+    box.appendChild(table);
+    return box;
+  }
+
   function clockText(totalSeconds) {
     const s = Math.max(0, Math.round(totalSeconds));
     const m = Math.floor(s / 60);
@@ -223,8 +231,209 @@
       .test(String(text)) ? 1 : 0;
   }
 
+
+  /* ------------------------------ theming ------------------------------
+     The interface ships white and neutral. Choosing a team writes that
+     club's colors into the custom properties the stylesheet reads, so the
+     chrome, accents and highlights all follow. Ink colors are computed from
+     contrast rather than hard-coded, which is what keeps white-on-gold
+     (Saints, Steelers) legible alongside white-on-navy (Bears, Seahawks).
+     -------------------------------------------------------------------- */
+  const TEAM_KEY = 'wonderlic_team_v1';
+
+  function hexToRgb(hex) {
+    const h = String(hex).replace('#', '');
+    return [
+      parseInt(h.slice(0, 2), 16),
+      parseInt(h.slice(2, 4), 16),
+      parseInt(h.slice(4, 6), 16)
+    ];
+  }
+
+  function toHex(rgb) {
+    return '#' + rgb.map(function (v) {
+      const c = Math.max(0, Math.min(255, Math.round(v))).toString(16);
+      return c.length === 1 ? '0' + c : c;
+    }).join('');
+  }
+
+  function relLuminance(hex) {
+    return hexToRgb(hex).map(function (v) {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    }).reduce(function (a, c, i) { return a + c * [0.2126, 0.7152, 0.0722][i]; }, 0);
+  }
+
+  function contrast(a, b) {
+    const la = relLuminance(a), lb = relLuminance(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  }
+
+  /* Whichever of white or near-black reads better on this color. */
+  function inkFor(hex) {
+    return contrast(hex, '#ffffff') >= contrast(hex, '#0d1117') ? '#ffffff' : '#0d1117';
+  }
+
+  /* Nudge a color until it clears a contrast target against `ink`, moving away
+     from that ink. Powder blue and Saints gold are the reason this exists: as
+     shipped they fail AA both as a surface behind white text and as text on
+     white, so chrome uses a slightly adjusted variant while the true colors
+     stay on the team swatches. */
+  function ensureContrast(color, ink, target) {
+    const toward = ink === '#ffffff' ? '#000000' : '#ffffff';
+    let out = color, guard = 0;
+    while (contrast(out, ink) < target && guard++ < 40) out = mix(out, toward, 0.05);
+    return out;
+  }
+
+  function mix(hex, other, amount) {
+    const a = hexToRgb(hex), b = hexToRgb(other);
+    return toHex(a.map(function (v, i) { return v + (b[i] - v) * amount; }));
+  }
+
+  /* Small highlights need a color with some life in it, so a secondary that
+     is basically black, white or silver loses out to the tertiary. */
+  function vividness(hex) {
+    const rgb = hexToRgb(hex);
+    const max = Math.max.apply(null, rgb), min = Math.min.apply(null, rgb);
+    const lightness = (max + min) / 2 / 255;
+    const sat = max === min ? 0 : (max - min) / (255 - Math.abs(max + min - 255));
+    return sat * (1 - Math.abs(lightness - 0.5) * 1.2);
+  }
+
+  function pickAccent(team) {
+    const options = [team.secondary, team.tertiary, team.primary].filter(Boolean);
+    return options.slice().sort(function (a, b) { return vividness(b) - vividness(a); })[0];
+  }
+
+  function applyTeam(team) {
+    const root = document.documentElement;
+    const vars = {};
+
+    if (team) {
+      const p = team.primary;
+      const accent = pickAccent(team);
+      const brandInk = inkFor(p);
+      const brandBar = ensureContrast(p, brandInk, 4.5);
+      const accentInk = inkFor(accent);
+      const accentBar = ensureContrast(accent, accentInk, 4.5);
+
+      vars['--brand'] = p;                                        /* true color */
+      vars['--brand-bar'] = brandBar;                             /* surfaces holding text */
+      vars['--brand-ink'] = brandInk;
+      vars['--brand-text'] = ensureContrast(p, '#ffffff', 4.5);   /* text and lines on white */
+      vars['--brand-soft'] = mix(p, '#ffffff', 0.92);
+      vars['--brand-soft-2'] = mix(p, '#ffffff', 0.84);
+      vars['--brand-line'] = mix(p, '#ffffff', 0.68);
+      vars['--accent'] = accent;
+      vars['--accent-bar'] = accentBar;
+      vars['--accent-ink'] = accentInk;
+      /* The wordmark accent sits on the brand bar, so fall back when it would
+         disappear against it. */
+      vars['--accent-on-bar'] = contrast(accent, brandBar) >= 3.5 ? accent : brandInk;
+      vars['--page-tint'] = mix(p, '#ffffff', 0.94);
+    }
+
+    Object.keys(vars).forEach(function (k) { root.style.setProperty(k, vars[k]); });
+    if (!team) {
+      ['--brand', '--brand-bar', '--brand-ink', '--brand-text', '--brand-soft',
+       '--brand-soft-2', '--brand-line', '--accent', '--accent-bar', '--accent-ink',
+       '--accent-on-bar', '--page-tint']
+        .forEach(function (k) { root.style.removeProperty(k); });
+    }
+
+    if (team) root.setAttribute('data-team', team.id);
+    else root.removeAttribute('data-team');
+
+    const meta = document.getElementById('theme-color');
+    if (meta) meta.setAttribute('content', team ? team.primary : '#ffffff');
+
+    renderTeamButton(team);
+  }
+
+  function loadTeam() {
+    try {
+      const id = localStorage.getItem(TEAM_KEY);
+      if (!id) return null;
+      return TEAMS.filter(function (t) { return t.id === id; })[0] || null;
+    } catch (e) { return null; }
+  }
+
+  function saveTeam(team) {
+    try {
+      if (team) localStorage.setItem(TEAM_KEY, team.id);
+      else localStorage.removeItem(TEAM_KEY);
+    } catch (e) { /* private mode */ }
+  }
+
+  let TEAM = loadTeam();
+
+  function renderTeamButton(team) {
+    const btn = document.getElementById('btn-team');
+    const dot = document.getElementById('btn-team-dot');
+    const label = document.getElementById('btn-team-label');
+    if (!team) { btn.hidden = true; return; }
+    btn.hidden = false;
+    dot.style.background = 'linear-gradient(135deg, ' + team.primary + ' 0 50%, ' + team.secondary + ' 50% 100%)';
+    label.textContent = team.name;
+  }
+
+  function teamSwatch(team, cls) {
+    const sw = el('span', cls || 'teamcard__swatch');
+    sw.style.setProperty('--p', team.primary);
+    sw.style.setProperty('--s', team.secondary);
+    return sw;
+  }
+
+  /* ------------------------ question zero: the team --------------------- */
+  function renderTeamPicker() {
+    const host = document.getElementById('team-body');
+    host.innerHTML = '';
+
+    host.appendChild(el('p', 'teamscreen__eyebrow', 'Question 1'));
+    host.appendChild(el('h1', 'teamscreen__q', 'What\u2019s your favorite team?'));
+    host.appendChild(el('p', 'teamscreen__lede',
+      'This one is not scored. Pick a club and the whole app takes its colors \u2014 then the actual exam starts.'));
+
+    DIVISIONS.forEach(function (div) {
+      const parts = div.split(' ');
+      const members = TEAMS.filter(function (t) { return t.conf === parts[0] && t.div === parts[1]; });
+      const group = el('section', 'divgroup');
+      group.appendChild(el('h2', 'divgroup__head', div));
+      const grid = el('div', 'teamgrid');
+      members.forEach(function (team) {
+        const card = el('button', 'teamcard' + (TEAM && TEAM.id === team.id ? ' is-active' : ''));
+        card.type = 'button';
+        card.setAttribute('aria-label', team.city + ' ' + team.name);
+        card.appendChild(teamSwatch(team));
+        const text = el('span', 'teamcard__text');
+        text.appendChild(el('span', 'teamcard__city', team.city));
+        text.appendChild(el('span', 'teamcard__name', team.name));
+        card.appendChild(text);
+        card.addEventListener('click', function () { chooseTeam(team); });
+        grid.appendChild(card);
+      });
+      group.appendChild(grid);
+      host.appendChild(grid.children.length ? group : el('span'));
+    });
+
+    const skip = el('button', 'teamskip', TEAM ? 'Clear my team and keep it neutral' : 'No favorite \u2014 keep it neutral');
+    skip.type = 'button';
+    skip.addEventListener('click', function () { chooseTeam(null); });
+    host.appendChild(skip);
+  }
+
+  function chooseTeam(team) {
+    TEAM = team;
+    saveTeam(team);
+    applyTeam(team);
+    renderHome(currentMode);
+    show('home');
+  }
+
   /* ------------------------------ screens ------------------------------ */
   const screens = {
+    team: document.getElementById('screen-team'),
     home: document.getElementById('screen-home'),
     exam: document.getElementById('screen-exam'),
     results: document.getElementById('screen-results')
@@ -234,13 +443,17 @@
     Object.keys(screens).forEach(function (k) {
       screens[k].classList.toggle('is-active', k === name);
     });
+    // On a phone the exam hides the site bar to give the question the screen.
+    document.body.classList.toggle('is-exam', name === 'exam');
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
 
   /* ------------------------------- home -------------------------------- */
   let selectedTimer = { core: 'combine', advanced: 'install' };
+  let currentMode = 'core';
 
   function renderHome(modeKey) {
+    currentMode = modeKey;
     const mode = MODES[modeKey];
     const prog = STATE[modeKey];
     const host = document.getElementById('home-body');
@@ -254,6 +467,15 @@
     const freshExams = Math.floor(unseen / QUESTIONS_PER_EXAM);
 
     const hero = el('div', 'hero');
+    if (TEAM) {
+      const chip = el('button', 'hero__team');
+      chip.type = 'button';
+      chip.appendChild(teamSwatch(TEAM));
+      chip.appendChild(el('span', null, TEAM.city + ' ' + TEAM.name));
+      chip.appendChild(el('span', null, '\u00b7 change'));
+      chip.addEventListener('click', openTeamPicker);
+      hero.appendChild(chip);
+    }
     hero.appendChild(el('p', 'hero__eyebrow', mode.subtitle));
     hero.appendChild(el('h1', 'hero__title', mode.title));
 
@@ -363,7 +585,7 @@
       tb.appendChild(tr);
     });
     table.appendChild(tb);
-    panel.appendChild(table);
+    panel.appendChild(wrapTable(table));
     return panel;
   }
 
@@ -721,7 +943,7 @@
       tb.appendChild(tr);
     });
     table.appendChild(tb);
-    panel.appendChild(table);
+    panel.appendChild(wrapTable(table));
     return panel;
   }
 
@@ -751,7 +973,7 @@
       tb.appendChild(tr);
     });
     table.appendChild(tb);
-    panel.appendChild(table);
+    panel.appendChild(wrapTable(table));
     return panel;
   }
 
@@ -874,8 +1096,15 @@
     }
   });
   document.querySelectorAll('[data-mode-tab]').forEach(function (b) {
-    b.addEventListener('click', function () { renderHome(b.dataset.modeTab); });
+    b.addEventListener('click', function () { renderHome(b.dataset.modeTab); show('home'); });
   });
+  document.getElementById('btn-team').addEventListener('click', openTeamPicker);
+
+  function openTeamPicker() {
+    if (EXAM && !EXAM.finished) return;
+    renderTeamPicker();
+    show('team');
+  }
   document.getElementById('btn-home').addEventListener('click', function () {
     renderHome('core'); show('home');
   });
@@ -899,6 +1128,9 @@
     if (EXAM && !EXAM.finished) { e.preventDefault(); e.returnValue = ''; }
   });
 
+  /* Question 1 comes before anything else: the interface stays white until a
+     team is chosen, then takes that club's colors for the rest of the visit. */
+  applyTeam(TEAM);
   renderHome('core');
-  show('home');
+  if (TEAM) show('home'); else { renderTeamPicker(); show('team'); }
 })();
