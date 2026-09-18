@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wonderlic 2.0 — The NFL Combine Exam</title>
+<meta name="description" content="A browser-based NFL Wonderlic exam: 20 randomized questions from a 100-question bank, a full answer walkthrough, comparisons against leaked NFL Combine scores, and the Wonderlic 3.0 Beta football-concepts test.">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🏈</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <button id="btn-home" class="topbar__brand" type="button">
+    <span class="topbar__mark">🏈</span>
+    <span class="topbar__name">WONDERLIC <strong>2.0</strong></span>
+  </button>
+  <nav class="topbar__tabs">
+    <button class="tab is-active" type="button" data-mode-tab="core">2.0 Combine</button>
+    <button class="tab" type="button" data-mode-tab="advanced">3.0 Beta</button>
+  </nav>
+</header>
+
+<!-- ============================ HOME ============================ -->
+<main id="screen-home" class="screen is-active">
+  <div id="home-body" class="wrap"></div>
+  <footer class="sitefoot">
+    <p>Built as a study tool. Not affiliated with the National Football League or Wonderlic Inc. Player scores shown in this app come from figures that leaked publicly and have never been officially confirmed.</p>
+  </footer>
+</main>
+
+<!-- ============================ EXAM ============================ -->
+<main id="screen-exam" class="screen">
+  <div class="examhead">
+    <div class="wrap examhead__inner">
+      <div class="examhead__left">
+        <p id="exam-title" class="examhead__title">Wonderlic 2.0</p>
+        <p id="exam-counter" class="examhead__counter">Question 1 of 20</p>
+      </div>
+      <div class="examhead__right">
+        <p id="exam-blanks" class="examhead__blanks">20 unanswered</p>
+        <p id="exam-clock" class="clock">4:48</p>
+        <button id="btn-quit" class="btn btn--ghost btn--small" type="button">Quit</button>
+      </div>
+    </div>
+    <div class="progress"><div id="exam-progress-fill" class="progress__fill"></div></div>
+  </div>
+
+  <div id="exam-body" class="wrap"></div>
+
+  <div class="examfoot">
+    <div class="wrap examfoot__inner">
+      <button id="btn-prev" class="btn btn--ghost" type="button">Previous</button>
+      <p class="examfoot__hint">No answers until the exam is over.</p>
+      <button id="btn-next" class="btn" type="button">Next</button>
+    </div>
+  </div>
+</main>
+
+<!-- =========================== RESULTS ========================== -->
+<main id="screen-results" class="screen">
+  <div id="results-body" class="wrap"></div>
+  <footer class="sitefoot">
+    <p>Scores attributed to NFL players throughout this app are unofficial. See the note on the results page.</p>
+  </footer>
+</main>
+
+<script src="js/questions.js"></script>
+<script src="js/questions-advanced.js"></script>
+<script src="js/players.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
