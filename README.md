@@ -1,5 +1,7 @@
 # Wonderlic 2.0 — the NFL Combine exam, in the browser
 
+**Live site:** https://camthebarman.github.io/Wonderlic-2.0/
+
 A self-contained HTML/CSS/JavaScript study tool. No build step, no dependencies,
 no server required — open `index.html` and take the test.
 
@@ -47,12 +49,24 @@ The real Wonderlic Personnel Test is 50 questions in 12 minutes. This exam is
 and **Untimed** are also available. When the clock hits zero the exam submits
 itself with whatever you have.
 
-## Running it
+## Running it locally
 
 ```
 open index.html          # or any static server
 python3 -m http.server   # http://localhost:8000
 ```
+
+## Deploying
+
+`.github/workflows/pages.yml` publishes the repository root to GitHub Pages on
+every push to `main` (or to the working branch), and can be run by hand from the
+Actions tab. It requires **Settings → Pages → Build and deployment → Source:
+GitHub Actions** to be selected once; nothing is built, the static files are
+uploaded as-is.
+
+All asset paths are relative, so the site works unchanged at a project-Pages
+subpath such as `/Wonderlic-2.0/`, at a domain root, or straight off the
+filesystem.
 
 Progress lives in `localStorage` under `wonderlic_nfl_state_v1`. Each bank has a
 "Reset this bank" button on its home screen that clears seen-question history and
