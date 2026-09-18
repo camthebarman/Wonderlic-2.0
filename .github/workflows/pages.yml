@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - claude/wonderlic-nfl-exam-v17mxp
   workflow_dispatch:
 
 permissions:

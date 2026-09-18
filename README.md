@@ -59,8 +59,7 @@ python3 -m http.server   # http://localhost:8000
 ## Deploying
 
 `.github/workflows/pages.yml` publishes the repository root to GitHub Pages on
-every push to `main` (or to the working branch), and can be run by hand from the
-Actions tab. It requires **Settings → Pages → Build and deployment → Source:
+every push to `main`, and can be run by hand from the Actions tab. It requires **Settings → Pages → Build and deployment → Source:
 GitHub Actions** to be selected once; nothing is built, the static files are
 uploaded as-is.
 
